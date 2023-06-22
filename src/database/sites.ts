@@ -145,9 +145,29 @@ export function getTags(auth: string, id: Uuid) {
 export function getBlogs(auth: string, id: Uuid) {
     return new Promise(async (resolve, reject) => {
         getSite(auth, id)
-        .then(site => {
-            const blogs = (<Site>site).entries.map(blog => ({title: blog.title, description: blog.description}));
-            return resolve(blogs);
+        .then(async site => {
+            if (!site) return;
+
+            const client = new MongoClient(url);
+            client.connect();
+        
+            const db = client.db('do-it-myself');
+            const blogs = db.collection('blogs');
+
+            const projection = {
+                '_id': 0,
+                'id': 1,
+                'title': 1,
+                'description': 1,
+                'public': 1
+            }
+    
+            try {
+                const list = (await blogs.find({'id': { $in: site.entries }}, { projection }).toArray());
+                return resolve(list);
+            } catch (err) {
+                return reject(err);
+            }
         })
         .catch(err => {
             return reject(err);

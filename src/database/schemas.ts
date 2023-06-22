@@ -24,7 +24,7 @@ export interface Site {
     'id': Uuid,
     'name': string,
     'tags': Tag[],
-    'entries': Blog[]
+    'entries': Uuid[]
 }
 
 export interface Tag {

@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { validateBody, validateParams } from '@tuukezu/joi-express';
 import { JwtPayload, JwtToken  } from '../authentication/jwt';
 
-import { createSite, createTag, getSites, getTags, removeTag } from '../database/sites';
+import { createSite, createTag, getBlogs, getSites, getTags, removeTag } from '../database/sites';
 import { GoogleAuthToken } from "./authentication";
 
 const router = express.Router();
@@ -122,7 +122,7 @@ router.get('/:site/blogs', (req, res) => {
     const { site } = validateParams(req, res, params) || {};
     if(!site) return;
 
-    getTags(auth.id, site)
+    getBlogs(auth.id, site)
         .then(data => {
             return res.json(data);
         })
