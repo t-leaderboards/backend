@@ -1,0 +1,5 @@
+node_modules
+lib
+.npmrc
+config.json
+src/database/secret.json
