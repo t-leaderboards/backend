@@ -3,6 +3,7 @@ import Joi from 'joi';
 import { validateHeaders, validateQuery } from '@tuukezu/joi-express';
 import { getGoogleAuthUrl, getGoogleUser } from "../authentication/google-auth";
 import { JwtPayload, JwtToken  } from '../authentication/jwt';
+import { clientCallBack } from '../../config.json';
 
 import { login } from '../database/users';
 
@@ -45,8 +46,8 @@ router.get('/google/callback', async (req: Request, res: Response) => {
                     console.log(error);
                     return res.json({err: "Failed to generate jwt-token", status: 500});
                 }
-    
-                return res.json(token);
+                
+                return res.redirect(`${clientCallBack}?token=${token}`, 303);
             })
             .catch(err => {
                 console.log(err);

@@ -6,7 +6,18 @@ export type Html = string;
 
 export interface User {
     'id': Uuid,
-    'login-history': DateTime[]
+    'login-history': DateTime[],
+    'access-list': Access[]
+}
+
+export enum Role {
+    Administrator = "ADMIN",
+    Member = "MEMBER"
+}
+
+export interface Access {
+    'id': Uuid,
+    'role': Role
 }
 
 export interface Site {

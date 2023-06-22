@@ -19,7 +19,8 @@ export function login(id: string) {
             if (!user) {
                 const data: User = {
                     'id': id,
-                    'login-history': [Date.now()]
+                    'login-history': [Date.now()],
+                    'access-list': []
                 }
                 
                 await collection.insertOne(data);
@@ -38,6 +39,23 @@ export function login(id: string) {
 
         } catch (e) {
             return reject(e);
+        }
+    })
+}
+
+export function getUser(auth: string) : Promise<User | null> {
+    return new Promise(async (resolve, reject) => {
+        const client = new MongoClient(url);
+        client.connect();
+    
+        const db = client.db('do-it-myself');
+        const users = db.collection('user-schema');
+
+        try {
+            const site = <User | null>(await users.findOne({ 'id': auth }));
+            return resolve(site);
+        } catch (err) {
+            return reject(err);
         }
     })
 }

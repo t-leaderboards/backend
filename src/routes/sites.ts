@@ -3,7 +3,7 @@ import Joi from 'joi';
 import { validateBody, validateParams } from '@tuukezu/joi-express';
 import { JwtPayload, JwtToken  } from '../authentication/jwt';
 
-import { createSite, createTag, getTags, removeTag } from '../database/sites';
+import { createSite, createTag, getSites, getTags, removeTag } from '../database/sites';
 import { GoogleAuthToken } from "./authentication";
 
 const router = express.Router();
@@ -22,6 +22,19 @@ router.post('/create', (req, res) => {
     createSite(auth.id, request.name)
         .then(hash => {
             return res.json(hash);
+        })
+        .catch(err => {
+            console.log(err);
+        })
+});
+
+router.get('/list', (req, res) => {
+    const auth = <GoogleAuthToken>GoogleAuthToken.verifyRequest(req, res);
+    if(!auth) return;
+
+    getSites(auth.id)
+        .then(list => {
+            return res.json(list);
         })
         .catch(err => {
             console.log(err);

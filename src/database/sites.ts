@@ -1,7 +1,8 @@
 import { host, port } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
-import { Uuid, Site, Tag } from './schemas';
+import { Uuid, Site, Tag, User } from './schemas';
 import { genereateHash } from '../authentication/cryptography';
+import { getUser } from './users';
 
 const url = `mongodb://${host}:${port}/google-auth`;
 
@@ -93,6 +94,40 @@ function getSite(auth: string, id: Uuid) : Promise<Site | null> {
             return reject(err);
         }
     })
+}
+
+export function getSites(auth: string) {
+    return new Promise((resolve, reject) => {
+        getUser(auth)
+        .then(async user => {
+            if (!user) return;
+            
+            const client = new MongoClient(url);
+            client.connect();
+        
+            const db = client.db('do-it-myself');
+            const sites = db.collection('sites');
+
+            const projection = {
+                '_id': 0,
+                'id': 1,
+                'name': 1,
+            }
+    
+            try {
+                const list = (await sites.find({'id': { $in: user['access-list'].map(site => site.id) }}, { projection }).toArray());
+                console.log(list);
+                return resolve(list);
+            } catch (err) {
+                return reject(err);
+            }
+            
+        })
+        .catch(err => {
+            return reject(err);
+        })
+
+    });
 }
 
 export function getTags(auth: string, id: Uuid) {
