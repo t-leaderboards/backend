@@ -5,6 +5,7 @@ import { JwtPayload, JwtToken  } from '../authentication/jwt';
 
 import { createBlog, publishBlog, unpublishBlog, updateBlog } from '../database/blogs';
 import { GoogleAuthToken } from "./authentication";
+import { getBlog } from "../database/sites";
 
 const router = express.Router();
 
@@ -90,6 +91,26 @@ router.post('/:id/unpublish', (req, res) => {
     if(!id) return;
 
     unpublishBlog(auth.id, id)
+        .then(hash => {
+            return res.json(hash);
+        })
+        .catch(err => {
+            console.log(err);
+        })
+});
+
+router.get('/:id', (req, res) => {
+    const auth = <GoogleAuthToken>GoogleAuthToken.verifyRequest(req, res);
+    if(!auth) return;
+
+    const params = Joi.object({
+        id: Joi.string().required(),
+    });
+
+    const { id } = validateParams(req, res, params);
+    if(!id) return;
+
+    getBlog(auth.id, id)
         .then(hash => {
             return res.json(hash);
         })

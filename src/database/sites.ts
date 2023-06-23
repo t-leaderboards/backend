@@ -1,6 +1,6 @@
 import { host, port } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
-import { Uuid, Site, Tag, User } from './schemas';
+import { Uuid, Site, Tag, User, Blog } from './schemas';
 import { genereateHash } from '../authentication/cryptography';
 import { getUser } from './users';
 
@@ -159,7 +159,7 @@ export function getBlogs(auth: string, id: Uuid) {
                 'id': 1,
                 'title': 1,
                 'description': 1,
-                'public': 1
+                'public': 1,
             }
     
             try {
@@ -172,5 +172,27 @@ export function getBlogs(auth: string, id: Uuid) {
         .catch(err => {
             return reject(err);
         })
+    })
+}
+
+export function getBlog(auth: string, id: Uuid) {
+    return new Promise(async (resolve, reject) => {
+
+        const client = new MongoClient(url);
+        client.connect();
+    
+        const db = client.db('do-it-myself');
+        const blogs = db.collection('blogs');
+
+        const projection = {
+            '_id': 0
+        }
+
+        try {
+            const blog = <Blog | null>(await blogs.findOne({'id': id }, { projection }));
+            return resolve(blog);
+        } catch (err) {
+            return reject(err);
+        }
     })
 }
