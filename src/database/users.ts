@@ -1,11 +1,12 @@
 
-import { host, port } from './secret.json';
+import { host, port, user, password } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
 import { Uuid, Project, User, UserType, EntryStatus } from './schemas';
 import { comparePassword, encryptPassword, genereateHash } from '../authentication/cryptography';
 import { getProject } from './projects';
 
-const url = `mongodb://${host}:${port}/t-leaderboards`;
+const url = `mongodb://${user}:${password}@${host}:${port}/?authMechanism=DEFAULT`;
+
 
 
 export function login(project: Project, username: string, password: string | null): Promise<User> {

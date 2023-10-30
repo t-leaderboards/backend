@@ -1,10 +1,11 @@
 
-import { host, port } from './secret.json';
+import { host, port, user, password } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
 import { Uuid, Project, ProjectInfo } from './schemas';
 import { genereateHash } from '../authentication/cryptography';
 
-const url = `mongodb://${host}:${port}/t-leaderboards`;
+const url = `mongodb://${user}:${password}@${host}:${port}/?authMechanism=DEFAULT`;
+
 
 export function createProject(name: string) {
     return new Promise(async (resolve, reject) => {

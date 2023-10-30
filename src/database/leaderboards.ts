@@ -1,12 +1,12 @@
 
-import { host, port } from './secret.json';
+import { host, port, user, password } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
 import { Uuid, Entry, OrderBy, EntryStatus } from './schemas';
 import { genereateHash } from '../authentication/cryptography';
 import { getProject } from './projects';
 import { createUser, getUser, login } from './users';
 
-const url = `mongodb://${host}:${port}/t-leaderboards`;
+const url = `mongodb://${user}:${password}@${host}:${port}/?authMechanism=DEFAULT`;
 
 /*
         getProject({ publicKey })
