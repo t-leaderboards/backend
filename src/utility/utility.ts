@@ -1,5 +1,4 @@
 
-
 export const objectToPipe = (o: { [key: string]: any }): string => Object.keys(o).reduce((a, c) => `${a}|${o[c]}`, "").slice(1);
 export const listToPipe = (list: object[]): string => list.map(o => objectToPipe(o)).join('\n');
 
