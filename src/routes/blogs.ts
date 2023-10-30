@@ -1,3 +1,4 @@
+/*
 import express, { Request, Response } from "express";
 import Joi from 'joi';
 import { validateBody, validateParams } from '@tuukezu/joi-express';
@@ -122,3 +123,5 @@ router.get('/:id', (req, res) => {
 export {
     router
 }
+
+*/

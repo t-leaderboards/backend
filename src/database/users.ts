@@ -1,61 +1,130 @@
+
 import { host, port } from './secret.json';
 import { MongoClient, MongoServerError } from 'mongodb';
-import { User } from './schemas';
+import { Uuid, Project, User, UserType, EntryStatus } from './schemas';
+import { comparePassword, encryptPassword, genereateHash } from '../authentication/cryptography';
+import { getProject } from './projects';
 
-const url = `mongodb://${host}:${port}/google-auth`;
+const url = `mongodb://${host}:${port}/t-leaderboards`;
 
-export function login(id: string) {
-    return new Promise(async (resolve, reject) : Promise<User | void> => {
-        const client = new MongoClient(url);
-        client.connect();
-    
-        const db = client.db('do-it-myself');
-        const query = { id: id };
-        const collection = db.collection('user-schema');
-        
-        try {
-            const user = <User | null>(await collection.findOne(query));
-            
-            if (!user) {
-                const data: User = {
-                    'id': id,
-                    'login-history': [Date.now()],
-                    'access-list': []
-                }
-                
-                await collection.insertOne(data);
-                
-                client.close();
-                return resolve(data);
-            }
-            
-            const history = user['login-history'].length >= 10 ? user['login-history'].slice(1) : user['login-history'];
-            const update = { $set: { 'login-history': [...history, Date.now()] } };
 
-            await collection.updateOne(query, update);
+export function login(project: Project, username: string, password: string | null): Promise<User> {
+    return new Promise(async (resolve, reject) => {
+        getUser(project, { username })
+        .then(async user => {
+            if (!user) return resolve(await createUser(project, username, password));
 
-            client.close();
+            const success = !(!user.password) ? await comparePassword(<string>password, user.password) : true
+            if (!success) return reject({ status: 401, err: 'invalid credentials' });
+
             return resolve(user);
-
-        } catch (e) {
-            return reject(e);
-        }
+        })
+        .catch(err => {
+            return reject(err);
+        })
     })
 }
 
-export function getUser(auth: string) : Promise<User | null> {
+
+export function createUser(project: Project, username: string, password: string | null) : Promise<User> {
     return new Promise(async (resolve, reject) => {
         const client = new MongoClient(url);
         client.connect();
     
-        const db = client.db('do-it-myself');
+        const db = client.db(project.name);
         const users = db.collection('user-schema');
 
+        const hash: string | null = !password ? null : await encryptPassword(<string>password)
+        if (project.require_login && !hash) return reject({ status: 400, err: '\"password\" is required' });
+
+        const user: User = {
+            username,
+            id: genereateHash(16),
+            type: project.require_login ? UserType.Registered : UserType.Unregistered,
+            password: project.require_login ? hash : null,
+            entries: [],
+            created: (new Date()).getTime()
+        }
+
         try {
-            const site = <User | null>(await users.findOne({ 'id': auth }));
-            return resolve(site);
+            await users.insertOne(user);
+            return resolve(user);
         } catch (err) {
             return reject(err);
         }
+    })
+}
+
+
+export function getUser(project: Project, query: object) : Promise<User | null> {
+    return new Promise(async (resolve, reject) => {
+        const client = new MongoClient(url);
+        client.connect();
+    
+        const db = client.db(project.name);
+        const users = db.collection('user-schema');
+
+        try {
+            const user = <User |null>(await users.findOne(query));
+            return resolve(user);
+        } catch (err) {
+            return reject(err);
+        }
+    })
+}
+
+export function getUsers(privateKey: string, offset: number, limit: number) : Promise<User[]> {
+    return new Promise(async (resolve, reject) => {
+        getProject({ privateKey })
+        .then(async project => {
+            if (!project) return reject({ status: 400, err: 'No such project exists' });
+
+            const client = new MongoClient(url);
+            client.connect();
+        
+            const main = client.db(project.name);
+            const users = main.collection('user-schema');
+            
+            const list = <User[]><unknown>(users.find({}).skip(offset).limit(limit).project({'_id': 0, 'password': 0})).toArray();
+            return resolve(list);
+        })
+        .catch(err => {
+            return reject(err);
+        })
+    })
+}
+
+export function setUserSubmissionsStatus(privateKey: string, query: object, status: EntryStatus) : Promise<EntryStatus> {
+    return new Promise(async (resolve, reject) => {
+        getProject({ privateKey })
+        .then(async project => {
+            if (!project) return reject({ status: 400, err: 'No such project exists' });
+
+            getUser(project, query) 
+            .then(async user => {
+                if (!user) return reject({ status: 400, err: 'No such user exists' });
+
+                const client = new MongoClient(url);
+                client.connect();
+            
+                const db = client.db(project.name);
+                const entries = db.collection('entries');
+        
+                try {
+                    await entries.updateMany({ user_id: user.id }, { $set: { status }})
+
+                    return resolve(status)
+                } catch (err) {
+                    return reject(err);
+                }
+
+            })
+            .catch(err => {
+                return reject(err);
+            })
+        })
+        .catch(err => {
+            return reject(err);
+        })
     })
 }
